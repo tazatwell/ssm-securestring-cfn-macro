@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CloudFormation Macro to create Systems Manager SecureString Params
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  CfnMacro:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ssm_securestring_cfn_macro/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Role:
+        Fn::GetAtt:
+          - CfnMacroRole
+          - Arn
+
+  CfnMacroRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CreateLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+      RoleName:
+        Fn::Sub: "${AWS::StackName}-role"
+
+Outputs:
+  FunctionArn:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-function-arn"
+    Value:
+      Fn::GetAtt:
+        - CfnMacro
+        - Arn
+
+  RoleArn:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-role-arn"
+    Value:
+      Fn::GetAtt:
+        - CfnMacroRole
+        - Arn
+
