@@ -34,7 +34,7 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: CreateLogs
+        - PolicyName: CreateLogsPermission
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
