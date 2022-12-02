@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Example of invoking CloudFormation Macro to create SSM SecureString Parameter. See https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ssm/put-parameter.html for reference on parameters. This template does not accept the `--cli-input-json`, `--cli-input-yaml`, and `--generate-cli-skeleton` global aws cli flags.
+
+Parameters:
+  Name:
+    Type: String
+  Description:
+    Type: String
+    Default: ''
+  Value:
+    Type: String
+  Type:
+    Type: String
+    Default: "SecureString"
+    AllowedValues:
+      - "String"
+      - "StringList"
+      - "SecureString"
+  KeyId:
+    Type: String
+    Default: ""
+  Overwrite:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+  AllowedPattern:
+    Type: String
+    Default: ""
+  Tier:
+    Type: String
+    Default: "Standard"
+    AllowedValues:
+      - "Standard"
+      - "Advanced"
+      - "Intelligent-Tiering"
+  Policies:
+    Type: String
+    Default: ""
+  DataType:
+    Type: String
+    Default: "text"
+    AllowedValues:
+    - "text"
+    - "aws:ec2:image"
+    - "aws:ssm:integration"
+  TagKey1:
+    Type: String
+    Default: ""
+  TagValue1:
+    Type: String
+    Default: ""
+  TagKey2:
+    Type: String
+    Default: ""
+  TagValue2:
+    Type: String
+    Default: ""
+  TagKey3:
+    Type: String
+    Default: ""
+  TagValue3:
+    Type: String
+    Default: ""
+  TagKey4:
+    Type: String
+    Default: ""
+  TagValue4:
+    Type: String
+    Default: ""
+  TagKey5:
+    Type: String
+    Default: ""
+  TagValue5:
+    Type: String
+    Default: ""
+  
+
+Resources:
+  SSMSecureStringParam:
+    Type: Custom::SSMSecureStringParam
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: "ssm-securestring-cfn-macro-function-arn"
+      Name: 
+        Ref: Name
+      Description:
+        Ref: Description
+      Value:
+        Ref: Value
+      Type:
+        Ref: Type
+      KeyId:
+        Ref: KeyId
+      Overwrite:
+        Ref: Overwrite
+      AllowedPattern:
+        Ref: AllowedPattern
+      Tier:
+        Ref: Tier
+      Policies:
+        Ref: Policies
+      DateType:
+        Ref: DataType
+      TagKey1:
+        Ref: TagKey1
+      TagValue1:
+        Ref: TagValue1
+      TagKey2:
+        Ref: TagKey2
+      TagValue2:
+        Ref: TagValue2
+      TagKey3:
+        Ref: TagKey3
+      TagValue3:
+        Ref: TagValue3
+      TagKey4:
+        Ref: TagKey4
+      TagValue4:
+        Ref: TagValue4
+      TagKey5:
+        Ref: TagKey5
+      TagValue5:
+        Ref: TagValue5
+

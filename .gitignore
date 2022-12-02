@@ -1,3 +1,6 @@
 samconfig.toml
 Makefile
 .aws-sam
+invoke/output.json
+events/event.json
+invoke.invoke.sh

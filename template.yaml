@@ -6,8 +6,19 @@ Globals:
   Function:
     Timeout: 3
 
+Parameters:
+  LogGroupName:
+    Type: String
+    Default: ""
+
+Conditions:
+  UseDefaultLogGroup:
+    Fn::Equals:
+      - Ref: LogGroupName
+      - ""
+
 Resources:
-  CfnMacro:
+  CfnMacroFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ssm_securestring_cfn_macro/
@@ -47,14 +58,36 @@ Resources:
       RoleName:
         Fn::Sub: "${AWS::StackName}-role"
 
+  CfnMacro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - CfnMacroFunction
+          - Arn
+      LogGroupName:
+        Fn::If:
+          - UseDefaultLogGroup
+          - Ref: AWS::NoValue
+          - Ref: LogGroupName
+      Name:
+        Fn::Sub: "${AWS::StackName}-macro"
+
 Outputs:
+  FunctionName:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-function-name"
+    Value:
+      Ref: CfnMacroFunction
+
   FunctionArn:
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}-function-arn"
     Value:
       Fn::GetAtt:
-        - CfnMacro
+        - CfnMacroFunction
         - Arn
 
   RoleArn:
@@ -66,3 +99,9 @@ Outputs:
         - CfnMacroRole
         - Arn
 
+  MacroName:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-macro-name"
+    Value:
+      Ref: CfnMacro
