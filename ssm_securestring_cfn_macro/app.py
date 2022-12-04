@@ -1,40 +1,64 @@
 import json
+import cfnresponse
+import boto3
 
 # import requests
 
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    print(event)
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+    print(context)
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+    if 'ResourceProperties' not in event:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Resource Properties key in Request"})
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    if 'Name' not in event['ResourceProperties']:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Name key in Request"})
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+    if 'Value' not in event['ResourceProperties']:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Value key in Request"})
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
+    if 'Type' not in event['ResourceProperties'] and event['RequestType'] == "Create":
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}) 
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
+    if event['RequestType'] == 'Create':
+      # create SSM Param here
+      ssm_client = boto3.client('ssm')
+      ssm_client.put_parameter(
+        Name=event['ResourceProperties']['Name'],
+        Description=event['ResourceProperties']['Description'],
+        Value=event['ResourceProperties']['Value'],
+        Type=event['ResourceProperties']['Type'],
+        KeyId=event['ResourceProperties']['KeyId'],
+        Overwrite=event['ResourceProperties']['Overwrite'],
+        AllowedPattern=event['ResourceProperties']['AllowedPattern'],
+        Tags=event['ResourceProperties']['Tags'],
+        Tier=event['ResourceProperties']['Tier'],
+        Policies=event['ResourceProperties']['Policies'],
+        DataType=event['ResourceProperties']['DataType']
+      )
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
 
-    #     raise e
+    elif event['RequestType'] == 'Update':
+      # create SSM Param here
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", event['PhysicalResourceId'])
+
+    elif event['RequestType'] == 'Delete':
+      # delete SSM Param here
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
+
+    else:
+      cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'])
+
 
     return {
-        "statusCode": 200,
+        "Status": "SUCCESS",
+        "PhysicalResourceId": "some-resource-id",
+        "StackId": "some-stack-id",
+        "RequestId": "some-request-id",
+        "LogicalResourceId": "some-logical-resource-id",
         "body": json.dumps({
             "message": "hello world",
             # "location": ip.text.replace("\n", "")

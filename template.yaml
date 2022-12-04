@@ -6,8 +6,19 @@ Globals:
   Function:
     Timeout: 3
 
+Parameters:
+  LogGroupName:
+    Type: String
+    Default: ""
+
+Conditions:
+  UseDefaultLogGroup:
+    Fn::Equals:
+      - Ref: LogGroupName
+      - ""
+
 Resources:
-  CfnMacro:
+  CfnMacroFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ssm_securestring_cfn_macro/
@@ -19,6 +30,21 @@ Resources:
         Fn::GetAtt:
           - CfnMacroRole
           - Arn
+      Layers:
+        - Ref: Layer
+
+  Layer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: python3.9
+      BuildArchitecture: x86_64
+    Properties:
+      CompatibleArchitectures:
+        - x86_64
+      CompatibleRuntimes:
+        - python3.9
+      ContentUri: layer/
+      LayerName: ssm-securestring-cfn-macro
 
   CfnMacroRole:
     Type: AWS::IAM::Role
@@ -34,7 +60,7 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: CreateLogs
+        - PolicyName: CreateLogsPermission
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -47,15 +73,44 @@ Resources:
       RoleName:
         Fn::Sub: "${AWS::StackName}-role"
 
+  CfnMacro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - CfnMacroFunction
+          - Arn
+      LogGroupName:
+        Fn::If:
+          - UseDefaultLogGroup
+          - Ref: AWS::NoValue
+          - Ref: LogGroupName
+      Name:
+        Fn::Sub: "${AWS::StackName}-macro"
+
 Outputs:
+  FunctionName:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-function-name"
+    Value:
+      Ref: CfnMacroFunction
+
   FunctionArn:
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}-function-arn"
     Value:
       Fn::GetAtt:
-        - CfnMacro
+        - CfnMacroFunction
         - Arn
+
+  LayerArn:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-layer-arn"
+    Value:
+      Ref: Layer
 
   RoleArn:
     Export:
@@ -66,3 +121,9 @@ Outputs:
         - CfnMacroRole
         - Arn
 
+  MacroName:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-macro-name"
+    Value:
+      Ref: CfnMacro

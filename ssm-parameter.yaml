@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Example of invoking CloudFormation Macro to create SSM SecureString Parameter. See https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ssm/put-parameter.html for reference on parameters. This template does not accept the `--cli-input-json`, `--cli-input-yaml`, and `--generate-cli-skeleton` global aws cli flags.
+
+Parameters:
+  Name:
+    Type: String
+  Description:
+    Type: String
+    Default: ''
+  Value:
+    Type: String
+  Type:
+    Type: String
+    Default: "SecureString"
+    AllowedValues:
+      - "String"
+      - "StringList"
+      - "SecureString"
+  KeyId:
+    Type: String
+    Default: ""
+  Overwrite:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+  AllowedPattern:
+    Type: String
+    Default: ""
+  Tier:
+    Type: String
+    Default: "Standard"
+    AllowedValues:
+      - "Standard"
+      - "Advanced"
+      - "Intelligent-Tiering"
+  Policies:
+    Type: String
+    Default: ""
+  DataType:
+    Type: String
+    Default: "text"
+    AllowedValues:
+    - "text"
+    - "aws:ec2:image"
+    - "aws:ssm:integration"
+  Tags:
+    Type: String
+
+Conditions:
+  IsSecureStringParam:
+    Fn::Equals:
+      - Ref: Type
+      - "SecureString"
+  IsNotSecureStringParam:
+    Fn::Not:
+      - Condition: IsSecureStringParam
+
+Resources:
+  NonSecureStringSSMParam:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotSecureStringParam
+    Properties:
+      AllowedPattern:
+        Ref: AllowedPattern
+      DataType:
+        Ref: DataType
+      Description:
+        Ref: Description
+      Name:
+        Ref: Name
+      Policies:
+        Ref: Policies
+      Tags:
+        Ref: Tags
+      Tier:
+        Ref: Tier
+      Type:
+        Ref: Type
+      Value:
+        Ref: Value
+
+  SSMSecureStringParam:
+    Type: Custom::SSMSecureStringParam
+    Condition: IsSecureStringParam
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: "ssm-securestring-cfn-macro-function-arn"
+      Name: 
+        Ref: Name
+      Description:
+        Ref: Description
+      Value:
+        Ref: Value
+      Type:
+        Ref: Type
+      KeyId:
+        Ref: KeyId
+      Overwrite:
+        Ref: Overwrite
+      AllowedPattern:
+        Ref: AllowedPattern
+      Tier:
+        Ref: Tier
+      Policies:
+        Ref: Policies
+      DateType:
+        Ref: DataType
+      Tags:
+        Ref: Tags
+

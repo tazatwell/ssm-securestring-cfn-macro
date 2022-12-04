@@ -1,3 +1,9 @@
+__pycache__
 samconfig.toml
 Makefile
 .aws-sam
+events
+layer
+invoke/invoke.sh
+invoke/output.json
+NOTES.md
