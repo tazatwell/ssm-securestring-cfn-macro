@@ -12,16 +12,16 @@ def lambda_handler(event, context):
     print(context)
 
     if 'ResourceProperties' not in event:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Resource Properties key in Request"}, event['PhysicalResourceId'])
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Resource Properties key in Request"})
 
     if 'Name' not in event['ResourceProperties']:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Name key in Request"}, event['PhysicalResourceId'])
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Name key in Request"})
 
     if 'Value' not in event['ResourceProperties']:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Value key in Request"}, event['PhysicalResourceId'])
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Value key in Request"})
 
     if 'Type' not in event['ResourceProperties'] and event['RequestType'] == "Create":
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}, event['PhysicalResourceId']) 
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}) 
 
     if event['RequestType'] == 'Create':
       # create SSM Param here
@@ -39,18 +39,18 @@ def lambda_handler(event, context):
         Policies=event['ResourceProperties']['Policies'],
         DataType=event['ResourceProperties']['DataType']
       )
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
 
     elif event['RequestType'] == 'Update':
       # create SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", event['PhysicalResourceId'])
 
     elif event['RequestType'] == 'Delete':
       # delete SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
 
     else:
-      cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'], None)
+      cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'])
 
 
     return {
