@@ -6,3 +6,4 @@ events
 layer
 invoke/invoke.sh
 invoke/output.json
+NOTES.md
