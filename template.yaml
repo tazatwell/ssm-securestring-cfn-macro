@@ -30,6 +30,21 @@ Resources:
         Fn::GetAtt:
           - CfnMacroRole
           - Arn
+      Layers:
+        - Ref: Layer
+
+  Layer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: python3.9
+      BuildArchitecture: x86_64
+    Properties:
+      CompatibleArchitectures:
+        - x86_64
+      CompatibleRuntimes:
+        - python3.9
+      ContentUri: layer/
+      LayerName: ssm-securestring-cfn-macro
 
   CfnMacroRole:
     Type: AWS::IAM::Role
@@ -89,6 +104,13 @@ Outputs:
       Fn::GetAtt:
         - CfnMacroFunction
         - Arn
+
+  LayerArn:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-layer-arn"
+    Value:
+      Ref: Layer
 
   RoleArn:
     Export:

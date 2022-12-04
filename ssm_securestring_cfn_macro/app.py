@@ -11,25 +11,46 @@ def lambda_handler(event, context):
 
     print(context)
 
-    if not event:
-        cfnresponse.send(event, context, cfnresponse.FAILED, "Input event is empty", None)
+    if 'ResourceProperties' not in event:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Resource Properties key in Request"}, event['PhysicalResourceId'])
 
-    if 'RequestType' not in event:
-        cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has no RequestType field", None)
+    if 'Name' not in event['ResourceProperties']:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Name key in Request"}, event['PhysicalResourceId'])
+
+    if 'Value' not in event['ResourceProperties']:
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Value key in Request"}, event['PhysicalResourceId'])
+
+    if 'Type' not in event['ResourceProperties'] and event['RequestType'] == "Create":
+      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}, event['PhysicalResourceId']) 
 
     if event['RequestType'] == 'Create':
-        # create SSM Param here
-        ssm_client = boto3.client('ssm')
-        # ssm_client.put_parameter(...)
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      # create SSM Param here
+      ssm_client = boto3.client('ssm')
+      ssm_client.put_parameter(
+        Name=event['ResourceProperties']['Name'],
+        Description=event['ResourceProperties']['Description'],
+        Value=event['ResourceProperties']['Value'],
+        Type=event['ResourceProperties']['Type'],
+        KeyId=event['ResourceProperties']['KeyId'],
+        Overwrite=event['ResourceProperties']['Overwrite'],
+        AllowedPattern=event['ResourceProperties']['AllowedPattern'],
+        Tags=event['ResourceProperties']['Tags'],
+        Tier=event['ResourceProperties']['Tier'],
+        Policies=event['ResourceProperties']['Policies'],
+        DataType=event['ResourceProperties']['DataType']
+      )
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+
     elif event['RequestType'] == 'Update':
-        # create SSM Param here
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      # create SSM Param here
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+
     elif event['RequestType'] == 'Delete':
-        # delete SSM Param here
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+      # delete SSM Param here
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", None)
+
     else:
-        cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'], None)
+      cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'], None)
 
 
     return {

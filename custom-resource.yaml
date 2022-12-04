@@ -45,41 +45,45 @@ Parameters:
     - "text"
     - "aws:ec2:image"
     - "aws:ssm:integration"
-  TagKey1:
+  Tags:
     Type: String
-    Default: ""
-  TagValue1:
-    Type: String
-    Default: ""
-  TagKey2:
-    Type: String
-    Default: ""
-  TagValue2:
-    Type: String
-    Default: ""
-  TagKey3:
-    Type: String
-    Default: ""
-  TagValue3:
-    Type: String
-    Default: ""
-  TagKey4:
-    Type: String
-    Default: ""
-  TagValue4:
-    Type: String
-    Default: ""
-  TagKey5:
-    Type: String
-    Default: ""
-  TagValue5:
-    Type: String
-    Default: ""
-  
+
+Conditions:
+  IsSecureStringParam:
+    Fn::Equals:
+      - Ref: Type
+      - "SecureString"
+  IsNotSecureStringParam:
+    Fn::Not:
+      - Condition: IsSecureStringParam
 
 Resources:
+  NonSecureStringSSMParam:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotSecureStringParam
+    Properties:
+      AllowedPattern:
+        Ref: AllowedPattern
+      DataType:
+        Ref: DataType
+      Description:
+        Ref: Description
+      Name:
+        Ref: Name
+      Policies:
+        Ref: Policies
+      Tags:
+        Ref: Tags
+      Tier:
+        Ref: Tier
+      Type:
+        Ref: Type
+      Value:
+        Ref: Value
+
   SSMSecureStringParam:
     Type: Custom::SSMSecureStringParam
+    Condition: IsSecureStringParam
     Properties:
       ServiceToken:
         Fn::ImportValue: "ssm-securestring-cfn-macro-function-arn"
@@ -103,24 +107,6 @@ Resources:
         Ref: Policies
       DateType:
         Ref: DataType
-      TagKey1:
-        Ref: TagKey1
-      TagValue1:
-        Ref: TagValue1
-      TagKey2:
-        Ref: TagKey2
-      TagValue2:
-        Ref: TagValue2
-      TagKey3:
-        Ref: TagKey3
-      TagValue3:
-        Ref: TagValue3
-      TagKey4:
-        Ref: TagKey4
-      TagValue4:
-        Ref: TagValue4
-      TagKey5:
-        Ref: TagKey5
-      TagValue5:
-        Ref: TagValue5
+      Tags:
+        Ref: Tags
 
