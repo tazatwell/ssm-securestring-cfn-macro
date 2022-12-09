@@ -11,7 +11,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}"
-          aws-region: "${{ secrets.AWS_ROLE_NAME }}"
+          aws-region: "${{ secrets.AWS_REGION }}"
 
       - name: Checkout Linter
         uses: actions/checkout@v3
