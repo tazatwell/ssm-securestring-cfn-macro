@@ -1,7 +1,7 @@
 import json
 import cfnresponse
 import boto3
-
+import put_parameter_args as param_args
 # import requests
 
 
@@ -24,43 +24,29 @@ def lambda_handler(event, context):
       cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}) 
 
     if event['RequestType'] == 'Create':
-      # create SSM Param here
       ssm_client = boto3.client('ssm')
-      ssm_client.put_parameter(
-        Name=event['ResourceProperties']['Name'],
-        Description=event['ResourceProperties']['Description'],
-        Value=event['ResourceProperties']['Value'],
-        Type=event['ResourceProperties']['Type'],
-        KeyId=event['ResourceProperties']['KeyId'],
-        Overwrite=event['ResourceProperties']['Overwrite'],
-        AllowedPattern=event['ResourceProperties']['AllowedPattern'],
-        Tags=event['ResourceProperties']['Tags'],
-        Tier=event['ResourceProperties']['Tier'],
-        Policies=event['ResourceProperties']['Policies'],
-        DataType=event['ResourceProperties']['DataType']
-      )
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
+      put_parameter_args = param_args(event['ResourceProperties'])
+
+      ssm_client.put_parameter(put_parameter_args.construct_parameter_args())
+
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Created parameter. Arguments: {}".format(put_parameter_args.construct_parameter_args))
 
     elif event['RequestType'] == 'Update':
-      # create SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", event['PhysicalResourceId'])
+      ssm_client = boto3.client('ssm')
+      put_parameter_args = param_args(event['ResourceProperties'])
+
+      ssm_client.put_parameter(put_parameter_args.construct_parameter_args())
+
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Updated parameter. Arguments: {}".format(put_parameter_args.construct_parameter_args))
 
     elif event['RequestType'] == 'Delete':
       # delete SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
+      ssm_client = boto3.client('ssm')
+
+      ssm_client.delete_parameter(Name=event['ResourceProperties']['Name'])
+
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Deleted parameter {}".format(event['ResourceProperties']['Name']))
 
     else:
       cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'])
 
-
-    return {
-        "Status": "SUCCESS",
-        "PhysicalResourceId": "some-resource-id",
-        "StackId": "some-stack-id",
-        "RequestId": "some-request-id",
-        "LogicalResourceId": "some-logical-resource-id",
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
