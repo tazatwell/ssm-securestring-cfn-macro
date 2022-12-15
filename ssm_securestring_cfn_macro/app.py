@@ -3,54 +3,80 @@ ssm_securestring_cfn_macro
     Lambda Application Code to create AWS SSM SecureString Parameters using a CloudFormation Macro
         uses boto3 library for aws api
         uses cfnresponse library to send status response object
-        uses included put_parameter_args to unit test handling input to aws ssm api call
-
 """
 
 import cfnresponse
 import boto3
 
-def lambda_handler(event, context):
+def lambda_handler(event, context):     # pragma: no cover
     """Lambda Handler entrypoint for lambda"""
 
     print(event)
 
     print(context)
 
-    validate, validateError = validate_request(event)
-    if validate == False:
+    validate, validate_error = validate_request(event)
+    if validate is False:
         cfnresponse.send(
             event,
             context,
             cfnresponse.FAILED,
-            {'Reason': f"{validateError}"}
+            {'Reason': f"{validate_error}"}
         )
 
     if event['RequestType'] == "Create" or event['RequestType'] == "Update":
         ssm_client = boto3.client("ssm")
-        put_parameter_args = put_param_args(event['ResourceProperties'])
 
-        ssm_client.put_parameter(put_parameter_args.construct_put_parameter_args())
+        param_args = construct_param_args(event)
 
-        cfnresponse.send(
-            event,
-            context,
-            cfnresponse.SUCCESS,
-            f"Created parameter. Arguments: {put_parameter_args.construct_put_parameter_args()}"
-        )
+        try:
+            ssm_response = ssm_client.put_parameter(**param_args)
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed put-parameter operation. Response: {ssm_response}"
+            )
+
+        except Exception as exc:
+            print(
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.FAILED,
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
 
     elif event['RequestType'] == 'Delete':
-        # delete SSM Param here
         ssm_client = boto3.client('ssm')
 
-        ssm_client.delete_parameter(Name=event['ResourceProperties']['Name'])
+        param_args = construct_param_args(event)
 
-        cfnresponse.send(
-            event,
-            context,
-            cfnresponse.SUCCESS,
-            f"Deleted parameter {event['ResourceProperties']['Name']}"
-        )
+        try:
+            ssm_response = ssm_client.delete_parameter(param_args)
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed delete-parameter operation. Response: {ssm_response}"
+            )
+
+        except Exception as exc:
+            print(
+                f"Error calling aws ssm delete-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.FAILED,
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
 
     else:
         cfnresponse.send(
@@ -60,52 +86,57 @@ def lambda_handler(event, context):
             f"Input event has invalid RequestType field: {event['RequestType']}"
         )
 
+def construct_param_args(event):        # pragma: no cover
+    """Construct arguments for ssm put-parameter operation"""
+    param_args = {}
+    param_args['Name'] = event['ResourceProperties']['Name']
+
+    if event['RequestType'] == "Delete":
+        return param_args
+
+    if 'Value' in event['ResourceProperties']:
+        param_args['Value'] = event['ResourceProperties']['Value']
+
+    if 'Description' in event['ResourceProperties']:
+        param_args['Description'] = event['ResourceProperties']['Description']
+
+    if 'Type' in event['ResourceProperties']:
+        param_args['Type'] = event['ResourceProperties']['Type']
+
+    if 'KeyId' in event['ResourceProperties']:
+        param_args['KeyId'] = event['ResourceProperties']['KeyId']
+
+    if 'Overwrite' in event['ResourceProperties']:
+        param_args['Overwrite'] = event['ResourceProperties']['Overwrite']
+
+    if 'AllowedPattern' in event['ResourceProperties']:
+        param_args['AllowedPattern'] = event['ResourceProperties']['AllowedPattern']
+
+    if 'Tags' in event['ResourceProperties']:
+        param_args['Tags'] = event['ResourceProperties']['Tags']
+
+    if 'Tier' in event['ResourceProperties']:
+        param_args['Tier'] = event['ResourceProperties']['Tier']
+
+    if 'Policies' in event['ResourceProperties']:
+        param_args['Policies'] = event['ResourceProperties']['Policies']
+
+    if 'DataType' in event['ResourceProperties']:
+        param_args['DataType'] = event['ResourceProperties']['DataType']
+
+
+    return param_args
+
 def validate_request(event):
-    """Perform high level validation based on put_parameter args"""
+    """Perform high level validation on input"""
 
     if 'ResourceProperties' not in event:
-        return (False, "No Resource Properties key in request")
+        return (
+            False,
+            "No Resource Properties key in request"
+        )
 
-    if 'Name' not in event['ResourceProperties']:
-        return (False, "No Name key in request's ResourceProperties field")
-
-    if 'Value' not in event['ResourceProperties']:
-        return (False, "No Value key in request's ResourceProperties field")
-
-    if 'Type' not in event['ResourceProperties'] and event['RequestType'] == "Create":
-        return (False, "No Type key in request's ResourceProperties field. Type must be specified when creating an SSM Parameter")
-
-    return True, None
-
-def construct_put_parameter_args(eventProps):
-    """
-        Construct args passed to ssm.put_parameter_args
-        Handles dynamic event properties
-    """
-
-    put_parameter_args = {}
-    put_parameter_args['Name'] = eventProps['Name']
-    put_parameter_args['Value'] = eventProps['Value']
-
-    if 'Description' in eventProps:
-        put_parameter_args['Description'] = eventProps['Description']
-
-    if 'Type' in eventProps:
-        put_parameter_args['Type'] = eventProps['Type']
-
-    if 'KeyId' in eventProps:
-        put_parameter_args['KeyId'] = eventProps['KeyId']
-    if 'Overwrite' in eventProps:
-        put_parameter_args['Overwrite'] = eventProps['Overwrite']
-    if 'AllowedPattern' in eventProps:
-        put_parameter_args['AllowedPattern'] = eventProps['AllowedPattern']
-    if 'Tags' in eventProps:
-        put_parameter_args['Tags'] = eventProps['Tags']
-    if 'Tier' in eventProps:
-        put_parameter_args['Tier'] = eventProps['Tier']
-    if 'Policies' in eventProps:
-        put_parameter_args['Policies'] = eventProps['Policies']
-    if 'DataType' in eventProps:
-        put_parameter_args['DataType'] = eventProps['DataType']
-
-    return put_parameter_args
+    return (
+        True,
+        None
+    )

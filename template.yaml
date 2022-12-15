@@ -10,6 +10,10 @@ Parameters:
   LogGroupName:
     Type: String
     Default: ""
+  LambdaAccessSSMPathPrefix:
+    Type: String
+    Description: "Optional SSM Param Path Prefix to limit lambda access"
+    Default: "/"
 
 Conditions:
   UseDefaultLogGroup:
@@ -69,7 +73,18 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
+                Resource:
+                  Fn::Sub: "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+        - PolicyName: SSMParamPermission
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
+                Resource:
+                  Fn::Sub: "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LambdaAccessSSMPathPrefix}"
       RoleName:
         Fn::Sub: "${AWS::StackName}-role"
 
