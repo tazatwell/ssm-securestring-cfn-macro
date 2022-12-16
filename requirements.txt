@@ -3,6 +3,7 @@ attrs==22.1.0
 boto3==1.26.31
 botocore==1.29.31
 cfnresponse==1.1.2
+coverage==6.5.0
 dill==0.3.6
 exceptiongroup==1.0.4
 iniconfig==1.1.1

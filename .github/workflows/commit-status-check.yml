@@ -39,9 +39,6 @@ jobs:
       - name: Run pylint
         run: pylint ssm_securestring_cfn_macro
 
-      - name: Show pytest version
-        run: pytest -v
-
       - name: Run pytest
         run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
 
