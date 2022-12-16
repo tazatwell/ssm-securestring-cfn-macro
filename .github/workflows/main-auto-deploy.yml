@@ -27,7 +27,9 @@ jobs:
         run: |
           mkdir layer
           cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt
-          cd layer; pip3 install --target . -r requirements.txt
+          cd layer
+          pip3 install --target . -r requirements.txt
+          cd ..
           sam build
 
       - name: Deploy SAM Project
