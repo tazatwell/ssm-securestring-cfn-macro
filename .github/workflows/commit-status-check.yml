@@ -1,6 +1,6 @@
 name: Commit Status Check Workflow
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   cloudformation-linter:
@@ -25,8 +25,22 @@ jobs:
   python-app-code-validator:
     runs-on: ubuntu-latest
     steps:
+      - name: Install pylint and pytest
+        run: pip3 install -r requirements.txt
+
       - name: Run Pylint
         run: pylint ssm_securestring_cfn_macro
 
       - name: Run PyTest
         run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
+	
+  sam-build-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build SAM App
+        run: |        
+          mkdir layer
+	  cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt	
+	  cd layer; pip3 install --target . -r requirements.txt
+	  sam build
+

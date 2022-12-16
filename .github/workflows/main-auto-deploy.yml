@@ -30,7 +30,5 @@ jobs:
       - name: Deploy SAM Project
         run: sam deploy --stack-name "gh-ssm-securestring-cfn-macro" --template-file ".aws-sam/build/template.yaml" --s3-bucket "${{ secrets.CLOUDFORMATION_PACKAGES_BUCKET }}" --s3-prefix "gh-ssm-securestring-cfn-macro" --region "${{ secrets.AWS_REGION }}"  --capabilities "CAPABILITY_NAMED_IAM" --no-confirm-changeset --no-fail-on-empty-changeset --parameter-overrides "LogGroupName=${{ secrets.CLOUDFORMATION_MACROS_LOG_GROUP }}"
 
-      - name: Invoke Lambda
-        run: ./invoke/invoke.sh 
 
 
