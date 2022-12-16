@@ -23,7 +23,13 @@ jobs:
           role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}"
           aws-region: "${{ secrets.AWS_REGION }}"
 
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
       - name: Build SAM Project
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
         run: |
           mkdir layer
           cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt
