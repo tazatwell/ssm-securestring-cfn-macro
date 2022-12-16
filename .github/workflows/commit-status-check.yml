@@ -28,11 +28,19 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Run Pylint and PyTest
+      - name: Install python3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-        run: python -m pip install -r requirements.txt; pylint ssm_securestring_cfn_macro; pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
+
+      - name: Install python modules
+        run: python -m pip install -r requirements.txt
+
+      - name: Run pylint
+        run: pylint ssm_securestring_cfn_macro
+
+      - name: Run pytest
+        run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
 
   sam-build-code:
     runs-on: ubuntu-latest
@@ -40,10 +48,12 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
       
-      - name: Build SAM App
+      - name: Install python3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
+      - name: Build SAM App
         run: |        
           mkdir layer
           cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt	

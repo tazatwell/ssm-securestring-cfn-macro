@@ -26,10 +26,12 @@ jobs:
       - name: Setup AWS SAM CLI
         uses: aws-actions/setup-sam@v2
 
-      - name: Build SAM Project
+      - name: Install python3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+        
+      - name: Build SAM App
         run: |
           mkdir layer
           cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt
