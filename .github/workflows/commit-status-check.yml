@@ -33,14 +33,14 @@ jobs:
 
       - name: Run PyTest
         run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
-	
+
   sam-build-code:
     runs-on: ubuntu-latest
     steps:
       - name: Build SAM App
         run: |        
           mkdir layer
-	  cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt	
-	  cd layer; pip3 install --target . -r requirements.txt
-	  sam build
+          cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt	
+          cd layer; pip3 install --target . -r requirements.txt
+          sam build
 
