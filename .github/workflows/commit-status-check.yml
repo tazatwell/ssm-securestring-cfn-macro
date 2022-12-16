@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Linter
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
       - name: Setup Cloud Formation Linter with Latest Version
@@ -25,6 +25,9 @@ jobs:
   python-app-code-validator:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      
       - name: Install pylint and pytest
         run: pip3 install -r requirements.txt
 
@@ -37,6 +40,9 @@ jobs:
   sam-build-code:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      
       - name: Build SAM App
         run: |        
           mkdir layer
