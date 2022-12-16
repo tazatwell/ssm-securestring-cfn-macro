@@ -1,13 +1,13 @@
 name: Commit Status Check Workflow
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   cloudformation-linter:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Linter
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
       - name: Setup Cloud Formation Linter with Latest Version
@@ -21,4 +21,47 @@ jobs:
 
       - name: Lint Parameterized SSM Parameter Template
         run: cfn-lint -t ssm-parameter.yaml
+
+  python-app-code-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install python3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install python modules
+        run: python -m pip install -r requirements.txt
+
+      - name: Run pylint
+        run: pylint ssm_securestring_cfn_macro
+
+      - name: Show pytest version
+        run: pytest -v
+
+      - name: Run pytest
+        run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
+
+  sam-build-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      
+      - name: Install python3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Build SAM App
+        run: |        
+          mkdir layer
+          cp ssm_securestring_cfn_macro/requirements.txt layer/requirements.txt	
+          cd layer
+          pip3 install --target . -r requirements.txt
+          cd ..
+          sam build
 

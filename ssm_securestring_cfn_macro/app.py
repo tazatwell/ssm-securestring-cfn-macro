@@ -1,66 +1,142 @@
-import json
+"""
+ssm_securestring_cfn_macro
+    Lambda Application Code to create AWS SSM SecureString Parameters using a CloudFormation Macro
+        uses boto3 library for aws api
+        uses cfnresponse library to send status response object
+"""
+
 import cfnresponse
 import boto3
 
-# import requests
-
-
-def lambda_handler(event, context):
+def lambda_handler(event, context):     # pragma: no cover
+    """Lambda Handler entrypoint for lambda"""
 
     print(event)
 
     print(context)
 
-    if 'ResourceProperties' not in event:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Resource Properties key in Request"})
+    validate, validate_error = validate_request(event)
+    if validate is False:
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.FAILED,
+            {'Reason': f"{validate_error}"}
+        )
 
-    if 'Name' not in event['ResourceProperties']:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Name key in Request"})
+    if event['RequestType'] == "Create" or event['RequestType'] == "Update":
+        ssm_client = boto3.client("ssm")
 
-    if 'Value' not in event['ResourceProperties']:
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "No Value key in Request"})
+        param_args = construct_param_args(event)
 
-    if 'Type' not in event['ResourceProperties'] and event['RequestType'] == "Create":
-      cfnresponse.send(event, context, cfnresponse.FAILED, {'Reason': "Type key must be specified when creating an SSM Parameter"}) 
+        try:
+            ssm_response = ssm_client.put_parameter(**param_args)
 
-    if event['RequestType'] == 'Create':
-      # create SSM Param here
-      ssm_client = boto3.client('ssm')
-      ssm_client.put_parameter(
-        Name=event['ResourceProperties']['Name'],
-        Description=event['ResourceProperties']['Description'],
-        Value=event['ResourceProperties']['Value'],
-        Type=event['ResourceProperties']['Type'],
-        KeyId=event['ResourceProperties']['KeyId'],
-        Overwrite=event['ResourceProperties']['Overwrite'],
-        AllowedPattern=event['ResourceProperties']['AllowedPattern'],
-        Tags=event['ResourceProperties']['Tags'],
-        Tier=event['ResourceProperties']['Tier'],
-        Policies=event['ResourceProperties']['Policies'],
-        DataType=event['ResourceProperties']['DataType']
-      )
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed put-parameter operation. Response: {ssm_response}"
+            )
 
-    elif event['RequestType'] == 'Update':
-      # create SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success", event['PhysicalResourceId'])
+        except Exception as exc:
+            print(
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.FAILED,
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
 
     elif event['RequestType'] == 'Delete':
-      # delete SSM Param here
-      cfnresponse.send(event, context, cfnresponse.SUCCESS, "Sample success")
+        ssm_client = boto3.client('ssm')
+
+        param_args = construct_param_args(event)
+
+        try:
+            ssm_response = ssm_client.delete_parameter(param_args)
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed delete-parameter operation. Response: {ssm_response}"
+            )
+
+        except Exception as exc:
+            print(
+                f"Error calling aws ssm delete-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
+
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.FAILED,
+                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+            )
 
     else:
-      cfnresponse.send(event, context, cfnresponse.FAILED, "Input event has invalid RequestType field: " + event['RequestType'])
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.FAILED,
+            f"Input event has invalid RequestType field: {event['RequestType']}"
+        )
+
+def construct_param_args(event):        # pragma: no cover
+    """Construct arguments for ssm put-parameter operation"""
+    param_args = {}
+    param_args['Name'] = event['ResourceProperties']['Name']
+
+    if event['RequestType'] == "Delete":
+        return param_args
+
+    if 'Value' in event['ResourceProperties']:
+        param_args['Value'] = event['ResourceProperties']['Value']
+
+    if 'Description' in event['ResourceProperties']:
+        param_args['Description'] = event['ResourceProperties']['Description']
+
+    if 'Type' in event['ResourceProperties']:
+        param_args['Type'] = event['ResourceProperties']['Type']
+
+    if 'KeyId' in event['ResourceProperties']:
+        param_args['KeyId'] = event['ResourceProperties']['KeyId']
+
+    if 'Overwrite' in event['ResourceProperties']:
+        param_args['Overwrite'] = event['ResourceProperties']['Overwrite']
+
+    if 'AllowedPattern' in event['ResourceProperties']:
+        param_args['AllowedPattern'] = event['ResourceProperties']['AllowedPattern']
+
+    if 'Tags' in event['ResourceProperties']:
+        param_args['Tags'] = event['ResourceProperties']['Tags']
+
+    if 'Tier' in event['ResourceProperties']:
+        param_args['Tier'] = event['ResourceProperties']['Tier']
+
+    if 'Policies' in event['ResourceProperties']:
+        param_args['Policies'] = event['ResourceProperties']['Policies']
+
+    if 'DataType' in event['ResourceProperties']:
+        param_args['DataType'] = event['ResourceProperties']['DataType']
 
 
-    return {
-        "Status": "SUCCESS",
-        "PhysicalResourceId": "some-resource-id",
-        "StackId": "some-stack-id",
-        "RequestId": "some-request-id",
-        "LogicalResourceId": "some-logical-resource-id",
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+    return param_args
+
+def validate_request(event):
+    """Perform high level validation on input"""
+
+    if 'ResourceProperties' not in event:
+        return (
+            False,
+            "No Resource Properties key in request"
+        )
+
+    return (
+        True,
+        None
+    )

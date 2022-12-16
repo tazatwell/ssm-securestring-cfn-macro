@@ -6,17 +6,6 @@ Globals:
   Function:
     Timeout: 3
 
-Parameters:
-  LogGroupName:
-    Type: String
-    Default: ""
-
-Conditions:
-  UseDefaultLogGroup:
-    Fn::Equals:
-      - Ref: LogGroupName
-      - ""
-
 Resources:
   CfnMacroFunction:
     Type: AWS::Serverless::Function
@@ -60,7 +49,7 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: CreateLogsPermission
+        - PolicyName: CreateLogGroupPermission
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -69,7 +58,18 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
+                Resource:
+                  Fn::Sub: "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+        - PolicyName: SSMParamPermission
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
+                Resource:
+                  Fn::Sub: "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
       RoleName:
         Fn::Sub: "${AWS::StackName}-role"
 
@@ -80,11 +80,6 @@ Resources:
         Fn::GetAtt:
           - CfnMacroFunction
           - Arn
-      LogGroupName:
-        Fn::If:
-          - UseDefaultLogGroup
-          - Ref: AWS::NoValue
-          - Ref: LogGroupName
       Name:
         Fn::Sub: "${AWS::StackName}-macro"
 

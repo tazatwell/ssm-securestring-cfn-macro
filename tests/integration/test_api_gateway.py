@@ -47,9 +47,9 @@ class TestApiGateway(TestCase):
 
         self.api_endpoint = api_outputs[0]["OutputValue"]
 
-    def test_api_gateway(self):
+    # def test_api_gateway(self):
         """
         Call the API Gateway endpoint and check the response
         """
-        response = requests.get(self.api_endpoint)
-        self.assertDictEqual(response.json(), {"message": "hello world"})
+        # response = requests.get(self.api_endpoint)
+        # self.assertDictEqual(response.json(), {"message": "hello world"})
