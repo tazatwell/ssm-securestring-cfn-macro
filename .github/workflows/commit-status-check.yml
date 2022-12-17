@@ -22,7 +22,7 @@ jobs:
       - name: Lint Parameterized SSM Parameter Template
         run: cfn-lint -t ssm-parameter.yaml
 
-  python-app-code-validator:
+  pylint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -39,13 +39,24 @@ jobs:
       - name: Run pylint
         run: pylint ssm_securestring_cfn_macro
 
-      - name: Show pytest version
-        run: pytest -v
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install python3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install python modules
+        run: python -m pip install -r requirements.txt
 
       - name: Run pytest
         run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
 
-  sam-build-code:
+  sam-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
