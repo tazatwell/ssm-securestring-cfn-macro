@@ -11,10 +11,12 @@ import client as ssm
 class TestSSMClient(unittest.TestCase):
     """Unit Test SSM Client"""
 
+    region = "us-west-2"
+
     def test_put_parameter_normal(self):
         """Request returns a normal response"""
 
-        ssm_client = botocore.session.get_session().create_client('ssm')
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
 
         ssm_put_parameter_params = {
             'Name': "some-name",
@@ -37,7 +39,7 @@ class TestSSMClient(unittest.TestCase):
     def test_put_parameter_exception(self):
         """Request returns exception"""
 
-        ssm_client = botocore.session.get_session().create_client('ssm')
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
 
         ssm_put_parameter_params = {
             'Name': "some-name",
@@ -61,7 +63,7 @@ class TestSSMClient(unittest.TestCase):
     def test_delete_parameter_normal(self):
         """Request returns a normal response"""
 
-        ssm_client = botocore.session.get_session().create_client('ssm')
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
 
         ssm_delete_parameter_params = {
             'Name': "some-name"
@@ -77,7 +79,7 @@ class TestSSMClient(unittest.TestCase):
     def test_delete_parameter_exception(self):
         """Request returns exception"""
 
-        ssm_client = botocore.session.get_session().create_client('ssm')
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
 
         ssm_delete_parameter_params = {
             'Name': "some-name"
