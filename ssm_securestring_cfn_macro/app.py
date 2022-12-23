@@ -6,7 +6,7 @@ ssm_securestring_cfn_macro
 """
 
 import cfnresponse
-import boto3
+import ssm.client as ssm
 
 def lambda_handler(event, context):     # pragma: no cover
     """Lambda Handler entrypoint for lambda"""
@@ -25,58 +25,59 @@ def lambda_handler(event, context):     # pragma: no cover
         )
 
     if event['RequestType'] == "Create" or event['RequestType'] == "Update":
-        ssm_client = boto3.client("ssm")
-
         param_args = construct_param_args(event)
 
-        try:
-            ssm_response = ssm_client.put_parameter(**param_args)
+        ssm_client = ssm.create_client()
 
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.SUCCESS,
-                f"Successfully performed put-parameter operation. Response: {ssm_response}"
-            )
+        try:
+            response = ssm.put_parameter(ssm_client, param_args)
 
         except Exception as exc:
             print(
-                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+                f"Error creating parameter. Type: {type(exc)}. Error: {exc}"
             )
-
             cfnresponse.send(
                 event,
                 context,
                 cfnresponse.FAILED,
-                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+                f"Error creating parameter. Type: {type(exc)}. Error: {exc}"
+            )
+
+        else:
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed put-parameter operation. Response: {response}"
             )
 
     elif event['RequestType'] == 'Delete':
-        ssm_client = boto3.client('ssm')
-
         param_args = construct_param_args(event)
 
-        try:
-            ssm_response = ssm_client.delete_parameter(param_args)
+        ssm_client = ssm.create_client()
 
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.SUCCESS,
-                f"Successfully performed delete-parameter operation. Response: {ssm_response}"
-            )
+        try:
+            response = ssm.delete_parameter(ssm_client, param_args)
 
         except Exception as exc:
             print(
-                f"Error calling aws ssm delete-parameter operation. Type: {type(exc)}. Error: {exc}"
+                f"Error deleting parameter. Type: {type(exc)}. Error: {exc}"
             )
-
             cfnresponse.send(
                 event,
                 context,
                 cfnresponse.FAILED,
-                f"Error calling aws ssm put-parameter operation. Type: {type(exc)}. Error: {exc}"
+                f"Error deleting parameter.. Type: {type(exc)}. Error: {exc}"
             )
+
+        else:
+            cfnresponse.send(
+                event,
+                context,
+                cfnresponse.SUCCESS,
+                f"Successfully performed delete-parameter operation.. Response: {response}"
+            )
+
 
     else:
         cfnresponse.send(
@@ -86,7 +87,7 @@ def lambda_handler(event, context):     # pragma: no cover
             f"Input event has invalid RequestType field: {event['RequestType']}"
         )
 
-def construct_param_args(event):        # pragma: no cover
+def construct_param_args(event):
     """Construct arguments for ssm put-parameter operation"""
     param_args = {}
     param_args['Name'] = event['ResourceProperties']['Name']
@@ -124,7 +125,6 @@ def construct_param_args(event):        # pragma: no cover
     if 'DataType' in event['ResourceProperties']:
         param_args['DataType'] = event['ResourceProperties']['DataType']
 
-
     return param_args
 
 def validate_request(event):
@@ -134,6 +134,12 @@ def validate_request(event):
         return (
             False,
             "No Resource Properties key in request"
+        )
+
+    if 'Name' not in event['ResourceProperties']:
+        return (
+            False,
+            "No Name key in request's ResourceProperties"
         )
 
     return (

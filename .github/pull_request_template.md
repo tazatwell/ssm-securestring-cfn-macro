@@ -41,6 +41,6 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] My changes generate no new warnings or errors
 - [ ] For application code changes I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing tests pass locally with my changes
-- [ ] I have deployed the cloudformation stack and verified the lambda works by invoking it.
+- [ ] I have deployed the cloudformation stack with `sam deploy` and verified the lambda works using `aws lambda invoke ...`
 - [ ] Any related commit status checks pass
 

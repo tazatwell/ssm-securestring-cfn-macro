@@ -5,7 +5,6 @@ on: [push, pull_request]
 jobs:
   cloudformation-linter:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -20,7 +19,18 @@ jobs:
         run: cfn-lint -t template.yaml
 
       - name: Lint Parameterized SSM Parameter Template
-        run: cfn-lint -t ssm-parameter.yaml
+        run: cfn-lint -t parameter.yaml
+ 
+  cfn-nag-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Scan SAM Template
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: template.yaml
 
   pylint:
     runs-on: ubuntu-latest
