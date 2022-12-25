@@ -6,9 +6,10 @@ Parameters:
     Type: String
   Description:
     Type: String
-    Default: ''
+    Default: ""
   Value:
     Type: String
+    Default: ""
   Type:
     Type: String
     Default: "SecureString"
@@ -47,6 +48,7 @@ Parameters:
     - "aws:ssm:integration"
   Tags:
     Type: String
+    Default: ""
 
 Conditions:
   IsSecureStringParam:
@@ -56,6 +58,11 @@ Conditions:
   IsNotSecureStringParam:
     Fn::Not:
       - Condition: IsSecureStringParam
+  DescriptionPassed:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: Description
+          - ""
 
 Resources:
   NonSecureStringSSMParam:
@@ -67,7 +74,10 @@ Resources:
       DataType:
         Ref: DataType
       Description:
-        Ref: Description
+        Fn::If:
+          - DescriptionPassed
+          - Ref: Description
+          - Ref: AWS::NoValue
       Name:
         Ref: Name
       Policies:

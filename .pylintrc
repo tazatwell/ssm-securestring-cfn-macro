@@ -1,5 +1,8 @@
 [MAIN]
 
+# Add relative path to PATH for pylint to not throw Unable to import module error
+init-hook='import sys; sys.path.append("./ssm_securestring_cfn_macro"); sys.path.append("./ssm_securestring_cfn_macro/ssm")'
+
 # Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists
 # only in one or another interpreter, leading to false positives when analysed.
@@ -154,7 +157,7 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
-        W0703   # catching too general exception
+        W0703  # catching too general exception
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

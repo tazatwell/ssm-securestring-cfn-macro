@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: CloudFormation Macro to create Systems Manager SecureString Params
 
+Parameters:
+  MaxConcurrentExecutions:
+    Type: Number
+    Default: 4
+
 Globals:
   Function:
     Timeout: 3
@@ -21,6 +26,8 @@ Resources:
           - Arn
       Layers:
         - Ref: Layer
+      ReservedConcurrentExecutions:
+        Ref: MaxConcurrentExecutions
 
   Layer:
     Type: AWS::Serverless::LayerVersion

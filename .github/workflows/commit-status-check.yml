@@ -2,10 +2,13 @@ name: Commit Status Check Workflow
 
 on: [push, pull_request]
 
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
 jobs:
   cloudformation-linter:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -20,9 +23,20 @@ jobs:
         run: cfn-lint -t template.yaml
 
       - name: Lint Parameterized SSM Parameter Template
-        run: cfn-lint -t ssm-parameter.yaml
+        run: cfn-lint -t parameter.yaml
+ 
+  cfn-nag-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
-  python-app-code-validator:
+      - name: Scan SAM Template
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: template.yaml
+
+  pylint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -39,13 +53,24 @@ jobs:
       - name: Run pylint
         run: pylint ssm_securestring_cfn_macro
 
-      - name: Show pytest version
-        run: pytest -v
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install python3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install python modules
+        run: python -m pip install -r requirements.txt
 
       - name: Run pytest
         run: pytest --cov=ssm_securestring_cfn_macro --no-cov-on-fail --cov-fail-under=100
 
-  sam-build-code:
+  sam-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo

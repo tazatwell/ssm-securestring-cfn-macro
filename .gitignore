@@ -4,7 +4,7 @@ Makefile
 .aws-sam
 events
 layer
-invoke/invoke.sh
-invoke/output.json
+invoke
 NOTES.md
 .coverage
+tests/integration/script.sh
