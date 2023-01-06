@@ -157,7 +157,9 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
-        W0703  # catching too general exception
+        W0703,    # catching too general exception
+        R0912,    # Too many branches
+        W1309     # Using an f-string that does not have any interpolated variables
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

@@ -31,7 +31,7 @@ class TestSSMClient(unittest.TestCase):
 
         with Stubber(ssm_client) as stubber:
             stubber.add_response('put_parameter', ssm_get_parameter_response, ssm_put_parameter_params)
-            service_response = ssm.put_parameter(ssm_client, ssm_put_parameter_params)
+            service_response = ssm.put_parameter(ssm_client, ssm_put_parameter_params, False)
 
         assert service_response == ssm_get_parameter_response
 
@@ -57,7 +57,7 @@ class TestSSMClient(unittest.TestCase):
                 expected_params = ssm_put_parameter_params
             )
 
-            self.assertRaises(ssm_client.exceptions.ParameterAlreadyExists, ssm.put_parameter, ssm_client, ssm_put_parameter_params)
+            self.assertRaises(ssm_client.exceptions.ParameterAlreadyExists, ssm.put_parameter, ssm_client, ssm_put_parameter_params, False)
 
 
     def test_delete_parameter_normal(self):
@@ -71,12 +71,12 @@ class TestSSMClient(unittest.TestCase):
 
         with Stubber(ssm_client) as stubber:
             stubber.add_response('delete_parameter', {}, ssm_delete_parameter_params)
-            service_response = ssm.delete_parameter(ssm_client, ssm_delete_parameter_params)
+            service_response = ssm.delete_parameter(ssm_client, ssm_delete_parameter_params, False, False)
 
         assert service_response == {}
 
 
-    def test_delete_parameter_exception(self):
+    def test_delete_parameter_param_not_found_exception_no_flag(self):
         """Request returns exception"""
 
         ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
@@ -95,4 +95,48 @@ class TestSSMClient(unittest.TestCase):
                 expected_params = ssm_delete_parameter_params
             )
 
-            self.assertRaises(ssm_client.exceptions.ParameterNotFound, ssm.delete_parameter, ssm_client, ssm_delete_parameter_params)
+            self.assertRaises(ssm_client.exceptions.ParameterNotFound, ssm.delete_parameter, ssm_client, ssm_delete_parameter_params, False, False)
+    
+
+    def test_delete_parameter_param_not_found_with_flag(self):
+        """Request returns response when param not found due to debug flag"""
+
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
+
+        ssm_delete_parameter_params = {
+            'Name': "some-name"
+        }
+
+        service_message_exception = "An error occurred (ParameterNotFound) when calling the DeleteParameter operation:"
+
+        with Stubber(ssm_client) as stubber:
+            stubber.add_client_error(
+                method = 'delete_parameter',
+                service_error_code = "ParameterNotFound",
+                service_message = service_message_exception,
+                expected_params = ssm_delete_parameter_params
+            )
+
+            assert ssm.delete_parameter(ssm_client, ssm_delete_parameter_params, False, True) == {}
+    
+
+    def test_delete_parameter_param_other_exception(self):
+        """Request returns exception other than Param Not Found"""
+
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
+
+        ssm_delete_parameter_params = {
+            'Name': "some-name"
+        }
+
+        service_message_exception = "An error occurred"
+
+        with Stubber(ssm_client) as stubber:
+            stubber.add_client_error(
+                method = 'delete_parameter',
+                service_error_code = "AlreadyExistsException",
+                service_message = service_message_exception,
+                expected_params = ssm_delete_parameter_params
+            )
+
+            self.assertRaises(ssm_client.exceptions.AlreadyExistsException, ssm.delete_parameter, ssm_client, ssm_delete_parameter_params, False, False)
