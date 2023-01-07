@@ -6,86 +6,128 @@ ssm_securestring_cfn_macro
 """
 
 import cfnresponse
+
 import ssm.client as ssm
+from log import logger
 
 def lambda_handler(event, context):     # pragma: no cover
     """Lambda Handler entrypoint for lambda"""
 
-    print(event)
-
-    print(context)
-
-    validate, validate_error = validate_request(event)
-    if validate is False:
+    try:
+        validate_request(event)
+    except Exception as exc:
         cfnresponse.send(
             event,
             context,
             cfnresponse.FAILED,
-            {'Reason': f"{validate_error}"}
+            {
+                'Status': "FAILED",
+                'Reason': f"Error processing ssm request. Type: {type(exc)}. Error: {exc}",
+                'PhysicalResourceId': "",
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
         )
 
-    if event['RequestType'] == "Create" or event['RequestType'] == "Update":
-        param_args = construct_param_args(event)
+    ignore_param_not_found = set_boolean_flag(event, "IgnoreParamNotFound")
 
-        ssm_client = ssm.create_client()
+    debug = set_boolean_flag(event, "Debug")
 
-        try:
-            response = ssm.put_parameter(ssm_client, param_args)
+    logger.add_log(
+        debug,
+        event
+    )
 
-        except Exception as exc:
-            print(
-                f"Error creating parameter. Type: {type(exc)}. Error: {exc}"
-            )
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.FAILED,
-                f"Error creating parameter. Type: {type(exc)}. Error: {exc}"
-            )
+    logger.add_log(
+        debug,
+        context
+    )
 
-        else:
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.SUCCESS,
-                f"Successfully performed put-parameter operation. Response: {response}"
-            )
+    ssm_client = ssm.create_client()
 
-    elif event['RequestType'] == 'Delete':
-        param_args = construct_param_args(event)
-
-        ssm_client = ssm.create_client()
-
-        try:
-            response = ssm.delete_parameter(ssm_client, param_args)
-
-        except Exception as exc:
-            print(
-                f"Error deleting parameter. Type: {type(exc)}. Error: {exc}"
-            )
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.FAILED,
-                f"Error deleting parameter.. Type: {type(exc)}. Error: {exc}"
-            )
-
-        else:
-            cfnresponse.send(
-                event,
-                context,
-                cfnresponse.SUCCESS,
-                f"Successfully performed delete-parameter operation.. Response: {response}"
-            )
-
+    try:
+        response = process_ssm_request(event, ssm_client, ignore_param_not_found, debug)
+    except Exception as exc:
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.FAILED,
+            {
+                'Status': "FAILED",
+                'Reason': f"Error processing ssm request. Type: {type(exc)}. Error: {exc}",
+                'PhysicalResourceId': event['ResourceProperties']['Name'],
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
+        )
 
     else:
         cfnresponse.send(
             event,
             context,
-            cfnresponse.FAILED,
-            f"Input event has invalid RequestType field: {event['RequestType']}"
+            cfnresponse.SUCCESS,
+            {
+                'Status': "SUCCESS",
+                'Reason': f"Successfully performed ssm operation. Reason: {response}",
+                'PhysicalResourceId': event['ResourceProperties']['Name'],
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
         )
+
+def process_ssm_request(event, ssm_client, ignore_param_not_found, debug):
+    """Perform ssm create_parameter or delete_parameter based by event"""
+    if event['RequestType'] == "Create" or event['RequestType'] == "Update":
+        param_args = construct_param_args(event)
+
+        try:
+            response = ssm.put_parameter(ssm_client, param_args, debug)
+
+        except Exception as exc:
+            logger.add_log(
+                debug,
+                f"Error creating parameter. Type: {type(exc)}. Error: {exc}"
+            )
+            raise exc
+
+        else:
+            logger.add_log(
+                debug,
+                f"Successfully performed put-parameter operation. Response: {response}"
+            )
+            return response
+
+    elif event['RequestType'] == 'Delete':
+        param_args = construct_param_args(event)
+
+        try:
+            response = ssm.delete_parameter(ssm_client, param_args, debug, ignore_param_not_found)
+
+        except Exception as exc:
+            logger.add_log(
+                debug,
+                f"Error deleting parameter. Type: {type(exc)}. Error: {exc}"
+            )
+            raise exc
+
+        else:
+            logger.add_log(
+                debug,
+                f"Successfully performed delete-parameter operation. Response: {response}"
+            )
+            return response
+
+    else:
+        raise CustomLambdaRuntimeException(f"InvalidRequestType: {event['RequestType']}")
+
+
+def set_boolean_flag(event, flag_name):
+    """Set flag"""
+    flag = False
+    if flag_name in event['ResourceProperties']:
+        if event['ResourceProperties'][flag_name].lower() == "true":
+            flag = True
+    return flag
 
 def construct_param_args(event):
     """Construct arguments for ssm put-parameter operation"""
@@ -108,7 +150,10 @@ def construct_param_args(event):
         param_args['KeyId'] = event['ResourceProperties']['KeyId']
 
     if 'Overwrite' in event['ResourceProperties']:
-        param_args['Overwrite'] = event['ResourceProperties']['Overwrite']
+        if event['ResourceProperties']['Overwrite'].lower() == 'true':
+            param_args['Overwrite'] = True
+        else:
+            param_args['Overwrite'] = False
 
     if 'AllowedPattern' in event['ResourceProperties']:
         param_args['AllowedPattern'] = event['ResourceProperties']['AllowedPattern']
@@ -131,18 +176,20 @@ def validate_request(event):
     """Perform high level validation on input"""
 
     if 'ResourceProperties' not in event:
-        return (
-            False,
-            "No Resource Properties key in request"
-        )
+        raise CustomLambdaRuntimeException("No Resource Properties key in request")
 
     if 'Name' not in event['ResourceProperties']:
-        return (
-            False,
-            "No Name key in request's ResourceProperties"
-        )
+        raise CustomLambdaRuntimeException("No Name key in request's ResourceProperties field")
 
-    return (
-        True,
-        None
-    )
+    return True
+
+
+class CustomLambdaRuntimeException(Exception):
+    """
+        Thrown for various reasons
+        pass message param to set the custom message
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)

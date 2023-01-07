@@ -10,6 +10,10 @@ Parameters:
   Value:
     Type: String
     Default: ""
+  SecretValue:
+    Type: String
+    Default: ""
+    NoEcho: true
   Type:
     Type: String
     Default: "SecureString"
@@ -49,6 +53,18 @@ Parameters:
   Tags:
     Type: String
     Default: ""
+  Debug:
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
+    Default: "False"
+  IgnoreParamNotFound:
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
+    Default: "False"
 
 Conditions:
   IsSecureStringParam:
@@ -62,6 +78,21 @@ Conditions:
     Fn::Not:
       - Fn::Equals:
           - Ref: Description
+          - ""
+  KeyIdPassed:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: KeyId
+          - ""
+  TagsPassed:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: Tags
+          - ""
+  PoliciesPassed:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: Policies
           - ""
 
 Resources:
@@ -102,11 +133,14 @@ Resources:
       Description:
         Ref: Description
       Value:
-        Ref: Value
+        Ref: SecretValue
       Type:
         Ref: Type
       KeyId:
-        Ref: KeyId
+        Fn::If:
+          - KeyIdPassed
+          - Ref: KeyId
+          - Ref: AWS::NoValue
       Overwrite:
         Ref: Overwrite
       AllowedPattern:
@@ -114,9 +148,18 @@ Resources:
       Tier:
         Ref: Tier
       Policies:
-        Ref: Policies
+        Fn::If:
+          - PoliciesPassed
+          - Ref: Policies
+          - Ref: AWS::NoValue
       DateType:
         Ref: DataType
       Tags:
-        Ref: Tags
-
+        Fn::If:
+          - TagsPassed
+          - Ref: Tags
+          - Ref: AWS::NoValue
+      Debug:
+        Ref: Debug
+      IgnoreParamNotFound:
+        Ref: IgnoreParamNotFound
