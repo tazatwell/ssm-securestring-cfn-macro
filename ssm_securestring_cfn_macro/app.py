@@ -20,7 +20,13 @@ def lambda_handler(event, context):     # pragma: no cover
             event,
             context,
             cfnresponse.FAILED,
-            f"Error processing ssm request. Type: {type(exc)}. Error: {exc}"
+            {
+                'Status': "FAILED",
+                'Reason': f"Error processing ssm request. Type: {type(exc)}. Error: {exc}",
+                'PhysicalResourceId': "",
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
         )
 
     ignore_param_not_found = set_boolean_flag(event, "IgnoreParamNotFound")
@@ -46,15 +52,28 @@ def lambda_handler(event, context):     # pragma: no cover
             event,
             context,
             cfnresponse.FAILED,
-            f"Error processing ssm request. Type: {type(exc)}. Error: {exc}"
+            {
+                'Status': "FAILED",
+                'Reason': f"Error processing ssm request. Type: {type(exc)}. Error: {exc}",
+                'PhysicalResourceId': event['ResourceProperties']['Name'],
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
         )
 
-    cfnresponse.send(
-        event,
-        context,
-        cfnresponse.SUCCESS,
-        f"Successfully processed ssm operation. Response: {response}"
-    )
+    else:
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.SUCCESS,
+            {
+                'Status': "SUCCESS",
+                'Reason': f"Successfully performed ssm operation. Reason: {response}",
+                'PhysicalResourceId': event['ResourceProperties']['Name'],
+                'StackId': event['StackId'],
+                'RequestId': event['RequestId'],
+            }
+        )
 
 def process_ssm_request(event, ssm_client, ignore_param_not_found, debug):
     """Perform ssm create_parameter or delete_parameter based by event"""

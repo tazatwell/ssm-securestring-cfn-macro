@@ -53,6 +53,18 @@ Parameters:
   Tags:
     Type: String
     Default: ""
+  Debug:
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
+    Default: "False"
+  IgnoreParamNotFound:
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
+    Default: "False"
 
 Conditions:
   IsSecureStringParam:
@@ -147,4 +159,7 @@ Resources:
           - TagsPassed
           - Ref: Tags
           - Ref: AWS::NoValue
-
+      Debug:
+        Ref: Debug
+      IgnoreParamNotFound:
+        Ref: IgnoreParamNotFound
