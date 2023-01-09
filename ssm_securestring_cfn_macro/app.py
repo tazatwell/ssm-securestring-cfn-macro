@@ -5,6 +5,7 @@ ssm_securestring_cfn_macro
         uses cfnresponse library to send status response object
 """
 
+import json
 import cfnresponse
 
 import ssm.client as ssm
@@ -78,7 +79,14 @@ def lambda_handler(event, context):     # pragma: no cover
 def process_ssm_request(event, ssm_client, ignore_param_not_found, debug):
     """Perform ssm create_parameter or delete_parameter based by event"""
     if event['RequestType'] == "Create" or event['RequestType'] == "Update":
-        param_args = construct_param_args(event)
+        try:
+            param_args = construct_param_args(event, debug)
+        except Exception as exc:
+            logger.add_log(
+                debug,
+                f"Error processing parameters. Type: {type(exc)}. Error: {exc}"
+            )
+            raise exc
 
         try:
             response = ssm.put_parameter(ssm_client, param_args, debug)
@@ -98,7 +106,7 @@ def process_ssm_request(event, ssm_client, ignore_param_not_found, debug):
             return response
 
     elif event['RequestType'] == 'Delete':
-        param_args = construct_param_args(event)
+        param_args = construct_param_args(event, debug)
 
         try:
             response = ssm.delete_parameter(ssm_client, param_args, debug, ignore_param_not_found)
@@ -129,7 +137,7 @@ def set_boolean_flag(event, flag_name):
             flag = True
     return flag
 
-def construct_param_args(event):
+def construct_param_args(event, debug):
     """Construct arguments for ssm put-parameter operation"""
     param_args = {}
     param_args['Name'] = event['ResourceProperties']['Name']
@@ -159,7 +167,29 @@ def construct_param_args(event):
         param_args['AllowedPattern'] = event['ResourceProperties']['AllowedPattern']
 
     if 'Tags' in event['ResourceProperties']:
-        param_args['Tags'] = event['ResourceProperties']['Tags']
+        try:
+            json_tags = json.loads(event['ResourceProperties']['Tags'])
+
+        except json.decoder.JSONDecodeError as exc:
+            logger.add_log(
+                debug,
+                f"Received error encoding {event['ResourceProperties']['Tags']} into json"
+            )
+            raise exc
+
+        else:
+            if not isinstance(json_tags, list):
+                raise CustomLambdaRuntimeException(
+                    f"Tags object {event['ResourceProperties']['Tags']} must be a list of maps"
+                )
+
+            for json_tags_iter in json_tags:
+                if not isinstance(json_tags_iter, dict):
+                    raise CustomLambdaRuntimeException(
+                        f"Tags object {event['ResourceProperties']['Tags']} must be a list of maps"
+                    )
+
+            param_args['Tags'] = json_tags
 
     if 'Tier' in event['ResourceProperties']:
         param_args['Tier'] = event['ResourceProperties']['Tier']

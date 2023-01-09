@@ -6,6 +6,7 @@ import unittest
 import pytest
 import botocore.session
 from botocore.stub import Stubber
+import json
 
 import app
 
@@ -151,6 +152,28 @@ class HandlerTest(unittest.TestCase):
         with pytest.raises(app.CustomLambdaRuntimeException) as e_info:
             app.process_ssm_request(sample_event, ssm_client, False, False)
 
+    def test_process_ssm_request_create_tags_exception(self):
+        """Request with Create RequestType and exception processing tags"""
+
+        sample_event = {
+            'RequestType': "Create",
+            'ResourceProperties': {
+                'Name': "some-name",
+                'Value': "some-value",
+                'Type': "some-type",
+                'AllowedPattern': "some-allowed-pattern",
+                'Tags': "{'Key':'SomeKey','Value':'NotInDoubleQuotesErr'}",
+                'Tier': "some-tier",
+                'Policies': "some-policies",
+                'DataType': "some-data-type"
+            }
+        }
+
+        ssm_client = botocore.session.get_session().create_client('ssm', region_name = self.region)
+
+        with pytest.raises(json.decoder.JSONDecodeError) as e_info:
+            app.process_ssm_request(sample_event, ssm_client, False, False)
+
     def test_verify_request_no_resource_properties(self):
         """Request with no 'ResourceProperties' field"""
         sample_event = {}
@@ -189,7 +212,7 @@ class HandlerTest(unittest.TestCase):
         }
 
         expected_response = {'Name': "some-name"}
-        assert app.construct_param_args(sample_event) == expected_response
+        assert app.construct_param_args(sample_event, False) == expected_response
 
     def test_construct_param_args_create_with_all_args_overwrite_false(self):
         """Request with Create request type and all create args present"""
@@ -204,7 +227,6 @@ class HandlerTest(unittest.TestCase):
                 'KeyId': "some-key-id",
                 'Overwrite': "some-overwrite",
                 'AllowedPattern': "some-allowed-pattern",
-                'Tags': "some-tags",
                 'Tier': "some-tier",
                 'Policies': "some-policies",
                 'DataType': "some-data-type"
@@ -219,13 +241,12 @@ class HandlerTest(unittest.TestCase):
             'KeyId': "some-key-id",
             'Overwrite': False,
             'AllowedPattern': "some-allowed-pattern",
-            'Tags': "some-tags",
             'Tier': "some-tier",
             'Policies': "some-policies",
             'DataType': "some-data-type"
         }
 
-        assert app.construct_param_args(sample_event) == expected_response
+        assert app.construct_param_args(sample_event, False) == expected_response
 
     def test_construct_param_args_create_with_all_args_overwrite_true(self):
         """Request with Create request type and all create args present"""
@@ -240,7 +261,6 @@ class HandlerTest(unittest.TestCase):
                 'KeyId': "some-key-id",
                 'Overwrite': "true",
                 'AllowedPattern': "some-allowed-pattern",
-                'Tags': "some-tags",
                 'Tier': "some-tier",
                 'Policies': "some-policies",
                 'DataType': "some-data-type"
@@ -255,13 +275,120 @@ class HandlerTest(unittest.TestCase):
             'KeyId': "some-key-id",
             'Overwrite': True,
             'AllowedPattern': "some-allowed-pattern",
-            'Tags': "some-tags",
             'Tier': "some-tier",
             'Policies': "some-policies",
             'DataType': "some-data-type"
         }
 
-        assert app.construct_param_args(sample_event) == expected_response
+        assert app.construct_param_args(sample_event, False) == expected_response
+
+    def test_construct_param_args_create_with_all_args_multiple_tags(self):
+        """Request with Create request type with multiple valid tags"""
+
+        sample_event = {
+            'RequestType': "Create",
+            'ResourceProperties': {
+                'Name': "some-name",
+                'Value': "some-value",
+                'Description': "some-description",
+                'Type': "some-type",
+                'KeyId': "some-key-id",
+                'Overwrite': "true",
+                'AllowedPattern': "some-allowed-pattern",
+                'Tags': "[{\"Key\": \"SomeKey\",\"Value\": \"SomeValue\"}, {\"Key\": \"SomeOtherKey\",\"Value\": \"SomeOtherValue\"}]",
+                'Tier': "some-tier",
+                'Policies': "some-policies",
+                'DataType': "some-data-type"
+            }
+        }
+
+        expected_response = {
+            'Name': "some-name",
+            'Value': "some-value",
+            'Description': "some-description",
+            'Type': "some-type",
+            'KeyId': "some-key-id",
+            'Overwrite': True,
+            'AllowedPattern': "some-allowed-pattern",
+            'Tags': [
+                {
+                    "Key": "SomeKey",
+                    "Value": "SomeValue"
+                },
+                {
+                    "Key": "SomeOtherKey",
+                    "Value": "SomeOtherValue"
+                }
+            ],
+            'Tier': "some-tier",
+            'Policies': "some-policies",
+            'DataType': "some-data-type"
+        }
+
+        assert app.construct_param_args(sample_event, False) == expected_response
+
+    def test_construct_param_args_tags_json_err(self):
+        """Request with Create request type and all create args present"""
+
+        sample_event = {
+            'RequestType': "Create",
+            'ResourceProperties': {
+                'Name': "some-name",
+                'Value': "some-value",
+                'Type': "some-type",
+                'AllowedPattern': "some-allowed-pattern",
+                'Tags': "{'Key':'SomeKey','Value':'NotInDoubleQuotesErr'}",
+                'Tier': "some-tier",
+                'Policies': "some-policies",
+                'DataType': "some-data-type"
+            }
+        }
+
+
+        with pytest.raises(json.decoder.JSONDecodeError) as e_info:
+            app.construct_param_args(sample_event, False)
+
+    def test_construct_param_args_tags_not_list(self):
+        """Request with Create request type and all create args present"""
+
+        sample_event = {
+            'RequestType': "Create",
+            'ResourceProperties': {
+                'Name': "some-name",
+                'Value': "some-value",
+                'Type': "some-type",
+                'AllowedPattern': "some-allowed-pattern",
+                'Tags': "{\"SomeKey\": \"Not a list!\"}",
+                'Tier': "some-tier",
+                'Policies': "some-policies",
+                'DataType': "some-data-type"
+            }
+        }
+
+
+        with pytest.raises(app.CustomLambdaRuntimeException) as e_info:
+            app.construct_param_args(sample_event, False)
+
+    def test_construct_param_args_tags_not_list_of_maps(self):
+        """Request with Create request type and all create args present"""
+
+        sample_event = {
+            'RequestType': "Create",
+            'ResourceProperties': {
+                'Name': "some-name",
+                'Value': "some-value",
+                'Type': "some-type",
+                'AllowedPattern': "some-allowed-pattern",
+                'Tags': "[\"Not\", \"A\", \"List\"]",
+                'Tier': "some-tier",
+                'Policies': "some-policies",
+                'DataType': "some-data-type"
+            }
+        }
+
+
+        with pytest.raises(app.CustomLambdaRuntimeException) as e_info:
+            app.construct_param_args(sample_event, False)
 
     def test_set_boolean_flag_no_flag(self):
         """Set Boolean Flag call with no such field in request"""
