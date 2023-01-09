@@ -75,6 +75,7 @@ Resources:
                 Action:
                   - ssm:PutParameter
                   - ssm:DeleteParameter
+                  - ssm:AddTagsToResource
                 Resource:
                   Fn::Sub: "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
       RoleName:
