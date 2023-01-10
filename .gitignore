@@ -1,6 +1,5 @@
 __pycache__
 samconfig.toml
-Makefile
 .aws-sam
 events
 layer
