@@ -5,7 +5,7 @@ build:
 	sam build
 
 deploy:
-	sam deploy --stack-name ssm-securestring-cfn-macro --template-file .aws-sam/build/template.yaml --capabilities CAPABILITY_NAMED_IAM
+	sam deploy --stack-name ssm-securestring-cfn-macro --template-file .aws-sam/build/template.yaml --capabilities CAPABILITY_NAMED_IAM --resolve-s3
 
 delete:
 	sam delete --stack-name ssm-securestring-cfn-macro
