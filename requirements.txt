@@ -8,7 +8,7 @@ charset-normalizer==2.1.1
 coverage==6.5.0
 dill==0.3.6
 exceptiongroup==1.0.4
-idna==3.4
+idna==3.7
 iniconfig==1.1.1
 isort==5.11.2
 jmespath==1.0.1
