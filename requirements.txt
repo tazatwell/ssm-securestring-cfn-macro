@@ -2,7 +2,7 @@ astroid==2.12.13
 attrs==22.1.0
 boto3==1.26.31
 botocore==1.29.31
-certifi==2022.12.7
+certifi==2024.7.4
 cfnresponse==1.1.2
 charset-normalizer==2.1.1
 coverage==6.5.0
