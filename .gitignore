@@ -7,3 +7,5 @@ invoke
 NOTES.md
 .coverage
 tests/integration/script.sh
+output.json
+Makefile-local
